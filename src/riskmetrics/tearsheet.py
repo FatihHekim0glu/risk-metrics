@@ -159,29 +159,26 @@ def tearsheet(
 
     if _tail is not None:
         rows["tail.var_95_historical"] = _safe(
-            getattr(_tail, "var_historical"), returns, alpha=0.95
+            _tail.value_at_risk, returns, confidence=0.95, method="historical"
         )
         rows["tail.var_99_historical"] = _safe(
-            getattr(_tail, "var_historical"), returns, alpha=0.99
+            _tail.value_at_risk, returns, confidence=0.99, method="historical"
         )
         rows["tail.var_95_cornish_fisher"] = _safe(
-            getattr(_tail, "var_cornish_fisher"), returns, alpha=0.95
+            _tail.cornish_fisher_var, returns, confidence=0.95
         )
         rows["tail.cvar_95"] = _safe(
-            getattr(_tail, "cvar_historical"), returns, alpha=0.95
+            _tail.conditional_value_at_risk, returns, confidence=0.95, method="historical"
         )
         rows["tail.cvar_99"] = _safe(
-            getattr(_tail, "cvar_historical"), returns, alpha=0.99
+            _tail.conditional_value_at_risk, returns, confidence=0.99, method="historical"
         )
-        rows["tail.skew"] = _safe(getattr(_tail, "skewness"), returns)
-        rows["tail.excess_kurtosis"] = _safe(
-            getattr(_tail, "excess_kurtosis"), returns
-        )
-        rows["tail.jarque_bera_pvalue"] = _safe(
-            getattr(_tail, "jarque_bera"), returns
-        )
+        rows["tail.skew"] = _safe(_tail.skewness, returns)
+        rows["tail.excess_kurtosis"] = _safe(_tail.excess_kurtosis, returns)
+        # jarque_bera returns (stat, p_value); _safe() unpacks tuples to [1].
+        rows["tail.jarque_bera_pvalue"] = _safe(_tail.jarque_bera, returns)
         rows["tail.psr_vs_zero"] = _safe(
-            getattr(_tail, "probabilistic_sharpe_ratio"), returns, sr_benchmark=0.0
+            _tail.probabilistic_sharpe_ratio, returns, threshold_sr=0.0
         )
     else:
         from scipy import stats as _sps
@@ -241,43 +238,45 @@ def tearsheet(
             _bench = None  # type: ignore[assignment]
 
         if _bench is not None:
-            rows["benchmark.alpha_annualized"] = _safe(
-                getattr(_bench, "alpha_annualized"),
-                returns,
-                benchmark,
-                risk_free=risk_free,
-                periods_per_year=periods_per_year,
-            )
-            rows["benchmark.alpha_tstat"] = _safe(
-                getattr(_bench, "alpha_tstat"),
-                returns,
-                benchmark,
-                risk_free=risk_free,
-            )
-            rows["benchmark.beta"] = _safe(getattr(_bench, "beta"), returns, benchmark)
-            rows["benchmark.r_squared"] = _safe(
-                getattr(_bench, "r_squared"), returns, benchmark
-            )
+            # alpha_annualized / alpha_tstat / r_squared all come from the same
+            # OLS fit; compute it once and unpack the dataclass.
+            capm_nan = (float("nan"), float("nan"), float("nan"))
+            try:
+                capm = _bench.alpha_beta(
+                    returns,
+                    benchmark,
+                    risk_free=risk_free,
+                    periods_per_year=periods_per_year,
+                )
+                alpha_ann = float(capm.alpha_annualized)
+                alpha_t = float(capm.alpha_tstat)
+                r2 = float(capm.r_squared)
+            except Exception:
+                alpha_ann, alpha_t, r2 = capm_nan
+            rows["benchmark.alpha_annualized"] = alpha_ann
+            rows["benchmark.alpha_tstat"] = alpha_t
+            rows["benchmark.beta"] = _safe(_bench.beta, returns, benchmark)
+            rows["benchmark.r_squared"] = r2
             rows["benchmark.tracking_error"] = _safe(
-                getattr(_bench, "tracking_error"),
+                _bench.tracking_error,
                 returns,
                 benchmark,
                 periods_per_year=periods_per_year,
             )
             rows["benchmark.information_ratio"] = _safe(
-                getattr(_bench, "information_ratio"),
+                _bench.information_ratio,
                 returns,
                 benchmark,
                 periods_per_year=periods_per_year,
             )
             rows["benchmark.up_capture"] = _safe(
-                getattr(_bench, "up_capture"), returns, benchmark
+                _bench.up_capture, returns, benchmark, periods_per_year=periods_per_year
             )
             rows["benchmark.down_capture"] = _safe(
-                getattr(_bench, "down_capture"), returns, benchmark
+                _bench.down_capture, returns, benchmark, periods_per_year=periods_per_year
             )
             rows["benchmark.correlation"] = _safe(
-                getattr(_bench, "correlation"), returns, benchmark
+                _bench.correlation, returns, benchmark
             )
             # ``ratios.m_squared`` depends on benchmark vol, so it lives down here.
             try:

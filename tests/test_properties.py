@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import math
+import warnings
 
 import numpy as np
 import pandas as pd
@@ -48,11 +49,12 @@ def test_property_max_drawdown_in_bounds(r: pd.Series) -> None:
 @_SETTINGS
 @given(r=returns_strategy)
 def test_property_sharpe_scale_invariant_under_positive_scaling(r: pd.Series) -> None:
-    # Skip degenerate (zero-vol) samples; their Sharpe is NaN by convention.
-    if r.std(ddof=1) == 0.0 or not np.isfinite(r.std(ddof=1)):
-        return
-    s1 = sharpe_ratio(r, risk_free=0.0, periods_per_year=1)
-    s2 = sharpe_ratio(2.0 * r, risk_free=0.0, periods_per_year=1)
+    # Degenerate (near-zero-vol) samples make Sharpe undefined; the lib emits
+    # a UserWarning and returns NaN. Silence locally and short-circuit on NaN.
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", UserWarning)
+        s1 = sharpe_ratio(r, risk_free=0.0, periods_per_year=1)
+        s2 = sharpe_ratio(2.0 * r, risk_free=0.0, periods_per_year=1)
     if not (np.isfinite(s1) and np.isfinite(s2)):
         return
     assert s1 == pytest.approx(s2, rel=1e-6, abs=1e-9)
@@ -96,7 +98,12 @@ def test_property_cumulative_return_floor(r: pd.Series) -> None:
 @_SETTINGS
 @given(r=returns_strategy)
 def test_property_psr_in_unit_interval(r: pd.Series) -> None:
-    p = probabilistic_sharpe_ratio(r, threshold_sr=0.0)
+    # Zero-vol inputs make PSR undefined; the lib correctly emits a warning and
+    # returns NaN. Silence that path locally so this property test focuses on
+    # the bound invariant for well-defined inputs.
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", UserWarning)
+        p = probabilistic_sharpe_ratio(r, threshold_sr=0.0)
     val = float(p)
     if math.isnan(val):
         return

@@ -381,13 +381,32 @@ def probabilistic_sharpe_ratio(
     validate_min_obs(r, min_obs=2, metric="probabilistic_sharpe_ratio")
 
     arr = r.to_numpy()
-    sr_obs = float(r.mean() / r.std(ddof=1))
+    std = float(r.std(ddof=1))
+    if std == 0.0 or not np.isfinite(std):
+        warnings.warn(
+            "zero volatility; probabilistic Sharpe undefined",
+            UserWarning,
+            stacklevel=2,
+        )
+        return float("nan")
+
+    sr_obs = float(r.mean()) / std
     sr_star = float(threshold_sr) / float(np.sqrt(periods_per_year))
-    s_skew = float(stats.skew(arr, bias=False))
-    k_full = float(stats.kurtosis(arr, fisher=False, bias=False))
+    # scipy emits RuntimeWarning on near-constant inputs (m2**2 underflow); the
+    # downstream NaN/finiteness guards turn that into a clean NaN return.
+    with warnings.catch_warnings():
+        warnings.filterwarnings("ignore", category=RuntimeWarning)
+        s_skew = float(stats.skew(arr, bias=False))
+        k_full = float(stats.kurtosis(arr, fisher=False, bias=False))
     n = len(r)
 
-    denom = float(np.sqrt(1.0 - s_skew * sr_obs + (k_full - 1.0) / 4.0 * sr_obs ** 2))
+    if not (np.isfinite(s_skew) and np.isfinite(k_full)):
+        return float("nan")
+
+    denom_sq = 1.0 - s_skew * sr_obs + (k_full - 1.0) / 4.0 * sr_obs ** 2
+    if denom_sq <= 0.0 or not np.isfinite(denom_sq):
+        return float("nan")
+    denom = float(np.sqrt(denom_sq))
     z = (sr_obs - sr_star) * float(np.sqrt(n - 1)) / denom
     return float(stats.norm.cdf(z))
 
