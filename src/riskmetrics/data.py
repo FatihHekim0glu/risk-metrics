@@ -109,7 +109,7 @@ def _fetch_yfinance(
     except ImportError as exc:
         raise ImportError("curl_cffi is required. " + _INSTALL_HINT) from exc
 
-    session = curl_requests.Session(impersonate="chrome")
+    session: object = curl_requests.Session(impersonate="chrome")
     raw = yf.download(
         tickers=tickers,
         start=start,
