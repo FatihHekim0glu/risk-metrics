@@ -1,0 +1,85 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "riskmetrics"
+version = "0.1.0"
+description = "Risk and performance metrics for financial return series."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { file = "LICENSE" }
+authors = [
+    { name = "Fatih Hekimoglu", email = "48997934+FatihHekim0glu@users.noreply.github.com" },
+]
+keywords = ["finance", "risk", "metrics", "drawdown", "sharpe", "quantitative"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Financial and Insurance Industry",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Office/Business :: Financial :: Investment",
+    "Topic :: Scientific/Engineering :: Information Analysis",
+    "Typing :: Typed",
+]
+dependencies = [
+    "numpy>=1.24",
+    "pandas>=2.0",
+    "scipy>=1.11",
+    "statsmodels>=0.14",
+]
+
+[project.optional-dependencies]
+data = [
+    "yfinance>=0.2.55",
+    "pandas-datareader>=0.10",
+    "curl_cffi>=0.7",
+    "pyarrow>=15.0",
+]
+dashboard = [
+    "streamlit>=1.30",
+    "plotly>=5.18",
+    "kaleido==0.2.1",
+]
+dev = [
+    "pytest>=8.0",
+    "pytest-cov>=4.1",
+    "hypothesis>=6.100",
+    "ruff>=0.4",
+    "mypy>=1.10",
+    "pandas-stubs",
+    "empyrical-reloaded>=0.5.10",
+]
+all = ["riskmetrics[data,dashboard,dev]"]
+
+[project.urls]
+Homepage = "https://github.com/FatihHekim0glu/risk-metrics"
+Issues = "https://github.com/FatihHekim0glu/risk-metrics/issues"
+Changelog = "https://github.com/FatihHekim0glu/risk-metrics/blob/main/CHANGELOG.md"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/riskmetrics"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "N", "UP", "B", "SIM", "RUF"]
+
+[tool.mypy]
+strict = false
+warn_return_any = true
+files = ["src/riskmetrics"]
+
+[[tool.mypy.overrides]]
+module = ["scipy.*", "statsmodels.*", "empyrical.*"]
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra --strict-markers"
