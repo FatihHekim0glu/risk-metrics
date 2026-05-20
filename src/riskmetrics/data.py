@@ -273,7 +273,7 @@ def get_prices(
     _require_pyarrow()
     cache_path = _resolve_cache_dir(cache_dir, source)
 
-    today = pd.Timestamp.utcnow().normalize().tz_localize(None)
+    today = pd.Timestamp.now(tz="UTC").normalize().tz_localize(None)
     freshness_threshold = today - pd.tseries.offsets.BDay(1)
 
     fetched_frames: dict[str, pd.Series] = {}
@@ -396,7 +396,7 @@ def get_risk_free(
     cache_path = _resolve_cache_dir(cache_dir, "fred")
     cache_file = cache_path / f"_fred_{series}.parquet"
 
-    today = pd.Timestamp.utcnow().normalize().tz_localize(None)
+    today = pd.Timestamp.now(tz="UTC").normalize().tz_localize(None)
     freshness_threshold = today - pd.tseries.offsets.BDay(1)
 
     cached_annual: pd.Series | None = None

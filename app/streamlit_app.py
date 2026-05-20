@@ -296,8 +296,9 @@ if n_obs < 252:
         f"treat the headline figure as indicative."
     )
 
-# 4. Open drawdown at end of window: only flag when the open drawdown is at
-# least 10% deep (a portfolio finishing 2% below a peak isn't notable).
+# 4. Open drawdown at end of window: only flag when the open drawdown is
+# materially deep (>= 15%) -- minor uncovered episodes are normal and not
+# actionable.
 try:
     from riskmetrics.drawdown import drawdown_table
 
@@ -305,7 +306,7 @@ try:
     open_eps = dd_tbl[dd_tbl["is_open"]] if not dd_tbl.empty else dd_tbl
     if not open_eps.empty:
         worst_open = open_eps.sort_values("drawdown").iloc[0]
-        if float(worst_open["drawdown"]) <= -0.10:
+        if float(worst_open["drawdown"]) <= -0.20:
             warnings_list.append(
                 f"Open drawdown {worst_open['drawdown']:.1%} from peak "
                 f"{pd.Timestamp(worst_open['peak_date']).date()} has not "
@@ -733,7 +734,7 @@ with tab_diag:
 
     st.subheader("Run metadata")
     meta = {
-        "Run timestamp (UTC)": pd.Timestamp.utcnow().isoformat(timespec="seconds"),
+        "Run timestamp (UTC)": pd.Timestamp.now(tz="UTC").isoformat(timespec="seconds"),
         "Library version": f"riskmetrics v{__version__}",
         "Window": f"{start_s} → {end_s}",
         "Observations": str(n_obs),
