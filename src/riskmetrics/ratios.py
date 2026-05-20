@@ -88,7 +88,11 @@ def sharpe_ratio(
     excess = r - rf_pp
 
     std = excess.std(ddof=1)
-    if std == 0 or not np.isfinite(std):
+    # Use a small tolerance for the "zero volatility" branch -- subtracting
+    # a constant risk-free can introduce ~1e-19 floating-point noise even when
+    # the underlying series is a constant. The threshold is chosen well below
+    # any meaningful daily volatility (typical equity sigma ~ 1e-2).
+    if not np.isfinite(std) or std < 1e-15:
         warnings.warn("zero volatility; Sharpe undefined", UserWarning, stacklevel=2)
         return float("nan")
 

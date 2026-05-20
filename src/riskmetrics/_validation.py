@@ -57,8 +57,12 @@ def align_inner(a: pd.Series, b: pd.Series) -> tuple[pd.Series, pd.Series]:
     return left, right
 
 
-def validate_min_obs(s: pd.Series, min_obs: int, metric: str) -> None:
-    """Raise :class:`ValueError` if ``s`` has fewer than ``min_obs`` observations."""
+def validate_min_obs(s: pd.Series, min_obs: int, metric: str = "metric") -> None:
+    """Raise :class:`ValueError` if ``s`` has fewer than ``min_obs`` observations.
+
+    ``metric`` is a human-readable label used in the error message. It defaults
+    to ``"metric"`` so callers that do not need a custom label can omit it.
+    """
     if len(s) < min_obs:
         raise ValueError(
             f"{metric} requires at least {min_obs} observations, got {len(s)}"
