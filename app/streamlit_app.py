@@ -234,39 +234,56 @@ warnings_list: list[str] = []
 n_obs = int(len(portfolio_returns))
 arr = portfolio_returns.to_numpy()
 
-# 1. Jarque-Bera
+# Auto-diagnostics fire ONLY when actionable: the test surfaces a number the
+# user should re-interpret a metric by, not just a statistical curiosity. Daily
+# equity returns are reliably non-Gaussian, autocorrelated, and fat-tailed --
+# the goal here is to warn when those properties materially distort the
+# headline numbers, not to echo well-known stylised facts.
+
+# 1. Jarque-Bera + VaR gap: flag only if parametric VaR understates historical
+# VaR by more than 20% (the level at which the choice of VaR method matters
+# for risk budgeting). Non-normality without a material gap is benign here.
 try:
     _, jb_p = stats.jarque_bera(arr)
-    if jb_p < 0.001:
-        hist_var = _g(ts_portfolio, "tail.var_95_historical")
-        mu_p, sd_p = float(arr.mean()), float(arr.std(ddof=1))
-        param_var = -(mu_p + sd_p * stats.norm.ppf(0.05))
-        if np.isfinite(hist_var) and hist_var > 0 and np.isfinite(param_var):
-            pct_off = (hist_var - param_var) / hist_var * 100
+    hist_var = _g(ts_portfolio, "tail.var_95_historical")
+    mu_p, sd_p = float(arr.mean()), float(arr.std(ddof=1))
+    param_var = -(mu_p + sd_p * stats.norm.ppf(0.05))
+    if (
+        jb_p < 1e-6
+        and np.isfinite(hist_var)
+        and hist_var > 0
+        and np.isfinite(param_var)
+    ):
+        pct_off = (hist_var - param_var) / hist_var * 100
+        if pct_off > 20.0:
             warnings_list.append(
-                f"Returns are non-Gaussian (JB p={jb_p:.2e}); parametric VaR may "
-                f"understate tail risk by ~{pct_off:.1f}% versus historical."
-            )
-        else:
-            warnings_list.append(
-                f"Returns are non-Gaussian (JB p={jb_p:.2e}); parametric VaR may "
-                f"understate tail risk versus historical."
+                f"Parametric 95% VaR understates the historical 95% VaR by "
+                f"{pct_off:.0f}% (JB p={jb_p:.1e}). Prefer historical or "
+                f"Cornish-Fisher VaR for tail-risk budgeting."
             )
 except Exception:
     pass
 
-# 2. Ljung-Box
+# 2. Ljung-Box + Sharpe sensitivity: flag only if the autocorrelation-adjusted
+# Sharpe differs from the naive Sharpe by more than 10% in absolute terms.
 try:
     from statsmodels.stats.diagnostic import acorr_ljungbox
 
     lb_res = acorr_ljungbox(portfolio_returns, lags=[5], return_df=True)
     lb_p = float(lb_res["lb_pvalue"].iloc[0])
-    if lb_p < 0.05:
-        smart_sr = _g(ts_portfolio, "ratios.sharpe_smart")
+    naive_sr = _g(ts_portfolio, "ratios.sharpe")
+    smart_sr = _g(ts_portfolio, "ratios.sharpe_smart")
+    if (
+        lb_p < 1e-3
+        and np.isfinite(naive_sr)
+        and np.isfinite(smart_sr)
+        and abs(naive_sr) > 1e-6
+        and abs(naive_sr - smart_sr) / abs(naive_sr) > 0.10
+    ):
         warnings_list.append(
-            f"Returns are serially correlated (Ljung-Box p={lb_p:.3f}); daily-Sharpe "
-            f"× √252 annualization is biased upward. Sharpe(smart=True) is "
-            f"{_fmt_num(smart_sr)}."
+            f"Serial correlation materially inflates Sharpe: naive "
+            f"{naive_sr:.2f} vs autocorrelation-adjusted {smart_sr:.2f} "
+            f"(Ljung-Box p={lb_p:.1e})."
         )
 except Exception:
     pass
@@ -275,11 +292,12 @@ except Exception:
 if n_obs < 252:
     se = 1.0 / np.sqrt(n_obs) if n_obs > 0 else float("nan")
     warnings_list.append(
-        f"Sample size {n_obs} — Sharpe SE ≈ 1/√n ≈ {se:.2f}; treat headline "
-        f"Sharpe as indicative."
+        f"Sample size {n_obs} (< 252) — Sharpe standard error ≈ {se:.2f}; "
+        f"treat the headline figure as indicative."
     )
 
-# 4. Open drawdown at end of window
+# 4. Open drawdown at end of window: only flag when the open drawdown is at
+# least 10% deep (a portfolio finishing 2% below a peak isn't notable).
 try:
     from riskmetrics.drawdown import drawdown_table
 
@@ -287,15 +305,18 @@ try:
     open_eps = dd_tbl[dd_tbl["is_open"]] if not dd_tbl.empty else dd_tbl
     if not open_eps.empty:
         worst_open = open_eps.sort_values("drawdown").iloc[0]
-        warnings_list.append(
-            f"Largest open drawdown {worst_open['drawdown']:.1%} started "
-            f"{pd.Timestamp(worst_open['peak_date']).date()} and has not recovered "
-            f"as of {portfolio_returns.index[-1].date()}."
-        )
+        if float(worst_open["drawdown"]) <= -0.10:
+            warnings_list.append(
+                f"Open drawdown {worst_open['drawdown']:.1%} from peak "
+                f"{pd.Timestamp(worst_open['peak_date']).date()} has not "
+                f"recovered as of {portfolio_returns.index[-1].date()}; "
+                f"reported duration is right-censored."
+            )
 except Exception:
     pass
 
-# 5. Rolling 90-day beta instability
+# 5. Rolling 90-day beta instability: only flag when the beta range exceeds
+# 1.0 across the sample (a swing of one full unit is genuinely unstable).
 if not benchmark_returns.empty:
     try:
         joined = pd.concat(
@@ -309,31 +330,34 @@ if not benchmark_returns.empty:
             roll_beta = (cov / var_b).dropna()
             if not roll_beta.empty:
                 lo, hi = float(roll_beta.min()), float(roll_beta.max())
-                if hi - lo > 0.5:
+                if hi - lo > 1.0:
                     warnings_list.append(
-                        f"Beta unstable (range {lo:.2f}–{hi:.2f}); single-beta CAPM "
-                        f"alpha unreliable."
+                        f"Rolling 90-day beta ranges {lo:.2f}–{hi:.2f} "
+                        f"(> 1.0 swing); single-beta CAPM alpha is unreliable."
                     )
     except Exception:
         pass
 
-# 6. Skewness
+# 6. Skewness: only flag |skew| > 2 (extreme asymmetry; |skew| around 0.5 is
+# normal for equity).
 try:
     s_val = float(stats.skew(arr, bias=False))
-    if s_val < -1 or s_val > 1:
+    if abs(s_val) > 2.0:
         warnings_list.append(
-            f"Returns are strongly skewed (S={s_val:.2f}); Cornish-Fisher VaR "
-            f"more reliable than parametric."
+            f"Returns are extremely skewed (S={s_val:.2f}); the symmetry "
+            f"assumption of Sharpe and parametric VaR is suspect."
         )
 except Exception:
     pass
 
-# 7. Excess kurtosis
+# 7. Excess kurtosis: only flag >10 (well above the 3-5 typical for daily
+# equity).
 try:
     k_val = float(stats.kurtosis(arr, fisher=True, bias=False))
-    if k_val > 5:
+    if k_val > 10.0:
         warnings_list.append(
-            f"Heavy tails (K={k_val:.2f}); historical VaR preferred over parametric."
+            f"Returns have exceptional fat tails (excess kurt = {k_val:.1f}); "
+            f"prefer historical VaR over parametric or Cornish-Fisher."
         )
 except Exception:
     pass

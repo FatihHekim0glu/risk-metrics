@@ -142,30 +142,88 @@ def _fetch_yfinance(
     return close[cols] if cols else close
 
 
+def _http_get_csv(url: str) -> str:
+    """GET ``url`` and return the response body as text.
+
+    Uses ``curl_cffi`` with Chrome TLS fingerprinting (the same backend the
+    yfinance fetcher uses), which is reliable on Windows where Python's
+    bundled OpenSSL frequently times out against CDN-fronted endpoints. Falls
+    back to the standard library if ``curl_cffi`` is not installed.
+    """
+    try:
+        from curl_cffi import requests as curl_requests
+
+        resp = curl_requests.get(url, impersonate="chrome", timeout=30)
+        resp.raise_for_status()
+        return resp.text
+    except ImportError:  # pragma: no cover - fallback path
+        import urllib.request
+
+        req = urllib.request.Request(url, headers={"User-Agent": "riskmetrics/0.1"})
+        with urllib.request.urlopen(req, timeout=30) as r:
+            return r.read().decode("utf-8")
+
+
+def _fetch_fred_csv(series: str, start: str, end: str | None) -> pd.DataFrame:
+    """Pull a FRED series via the public CSV endpoint.
+
+    No authentication required. Direct HTTPS so the library does not depend on
+    pandas_datareader, which on Python 3.12+ fails to import (its build uses
+    the removed ``distutils`` stdlib module).
+    """
+    from io import StringIO
+
+    url = (
+        "https://fred.stlouisfed.org/graph/fredgraph.csv?"
+        f"id={series}&cosd={start}"
+    )
+    if end is not None:
+        url += f"&coed={end}"
+    body = _http_get_csv(url)
+    df = pd.read_csv(StringIO(body))
+    # FRED CSV column has been renamed across years; accept either form.
+    date_col = (
+        "observation_date" if "observation_date" in df.columns else "DATE"
+    )
+    df[date_col] = pd.to_datetime(df[date_col])
+    df = df.set_index(date_col)
+    df.index.name = "DATE"
+    df = df.replace(".", pd.NA)
+    df[series] = pd.to_numeric(df[series], errors="coerce")
+    return df.dropna()
+
+
 def _fetch_stooq(
     tickers: list[str],
     start: str,
     end: str | None,
 ) -> pd.DataFrame:
-    """Pull close prices from Stooq via pandas_datareader, one ticker at a time."""
-    try:
-        from pandas_datareader import data as pdr
-    except ImportError as exc:
-        raise ImportError(
-            "pandas_datareader is required for the Stooq source. " + _INSTALL_HINT
-        ) from exc
+    """Pull close prices from Stooq via the public CSV endpoint, one ticker at a time.
+
+    Stooq exposes ``https://stooq.com/q/d/l/?s=<symbol>&i=d`` returning daily OHLCV
+    as CSV. No authentication required and no pandas_datareader dependency.
+    """
+    from io import StringIO
 
     frames: list[pd.Series] = []
+    start_ts = pd.Timestamp(start)
+    end_ts = pd.Timestamp(end) if end is not None else None
     for ticker in tickers:
         symbol = _to_stooq_symbol(ticker)
+        url = f"https://stooq.com/q/d/l/?s={symbol}&i=d"
         try:
-            raw = pdr.DataReader(symbol, "stooq", start, end)
+            body = _http_get_csv(url)
+            raw = pd.read_csv(StringIO(body), parse_dates=["Date"])
         except Exception as exc:  # pragma: no cover - network failures
             warnings.warn(f"Stooq fetch failed for {ticker!r}: {exc}", stacklevel=2)
             continue
         if raw is None or raw.empty or "Close" not in raw.columns:
             continue
-        series = raw["Close"].sort_index().rename(ticker)
+        raw = raw.set_index("Date").sort_index()
+        raw = raw.loc[start_ts:end_ts] if end_ts is not None else raw.loc[start_ts:]
+        if raw.empty:
+            continue
+        series = raw["Close"].rename(ticker)
         series.index = pd.to_datetime(series.index)
         frames.append(series)
 
@@ -356,20 +414,13 @@ def get_risk_free(
     )
 
     if needs_refresh:
-        try:
-            from pandas_datareader import data as pdr
-        except ImportError as exc:
-            raise ImportError(
-                "pandas_datareader is required for FRED data. " + _INSTALL_HINT
-            ) from exc
-
         fetch_start = (
             (cached_annual.index.max() + pd.Timedelta(days=1)).strftime("%Y-%m-%d")
             if cached_annual is not None and not cached_annual.empty
             else start
         )
         try:
-            raw = pdr.DataReader(series, "fred", fetch_start, end)
+            raw = _fetch_fred_csv(series, fetch_start, end)
         except Exception as exc:
             if cached_annual is None or cached_annual.empty:
                 raise
