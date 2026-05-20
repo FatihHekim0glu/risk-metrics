@@ -70,6 +70,16 @@ target-version = "py310"
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "N", "UP", "B", "SIM", "RUF"]
+# RUF022: __all__ is grouped semantically by module rather than sorted alphabetically.
+# RUF002/RUF003: docstrings carry Greek math notation (ρ, η, Σ) by design.
+ignore = ["RUF022", "RUF002", "RUF003"]
+
+[tool.ruff.lint.per-file-ignores]
+# Module docstrings are kept on a single line for discoverability.
+"src/riskmetrics/*.py" = ["E501"]
+# Test names embed capital math/API tokens (N divisor, RollingOLS, etc.) and the
+# empyrical-parity file uses importorskip + lazy imports by design.
+"tests/*.py" = ["N802", "E402", "E501"]
 
 [tool.mypy]
 strict = false

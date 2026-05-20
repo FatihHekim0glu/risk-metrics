@@ -2,10 +2,10 @@
 
 from __future__ import annotations
 
-from typing import TypeAlias, Union
+from typing import TypeAlias
 
 import numpy as np
 import pandas as pd
 
-ReturnsLike: TypeAlias = Union[pd.Series, np.ndarray, list[float]]
-PricesLike: TypeAlias = Union[pd.Series, pd.DataFrame]
+ReturnsLike: TypeAlias = pd.Series | np.ndarray | list[float]
+PricesLike: TypeAlias = pd.Series | pd.DataFrame

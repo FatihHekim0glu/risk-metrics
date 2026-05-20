@@ -139,10 +139,7 @@ def drawdown_table(returns: ReturnsLike, top: int = 10) -> pd.DataFrame:
         # index value (peak == wealth on bar 0 by construction unless r[0] < 0,
         # in which case the implicit peak is pre-sample and we still anchor at
         # index[0]).
-        if start == 0:
-            peak_date = index[0]
-        else:
-            peak_date = index[start - 1]
+        peak_date = index[0] if start == 0 else index[start - 1]
 
         if j < n:
             recovery_date = index[j]

@@ -27,7 +27,7 @@ def test_simple_returns_handcalc() -> None:
     )
     out = simple_returns(prices)
     assert out.shape == expected.shape
-    for got, want in zip(out.to_numpy(), expected.to_numpy()):
+    for got, want in zip(out.to_numpy(), expected.to_numpy(), strict=True):
         assert got == pytest.approx(want, abs=1e-6)
 
 

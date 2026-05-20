@@ -6,10 +6,9 @@ import warnings
 import numpy as np
 import pandas as pd
 import pytest
-from hypothesis import HealthCheck
+from hypothesis import HealthCheck, given
 from hypothesis import settings as hyp_settings
 from hypothesis import strategies as hyp_st
-from hypothesis import given
 
 from riskmetrics.drawdown import max_drawdown
 from riskmetrics.ratios import sharpe_ratio
@@ -20,7 +19,6 @@ from riskmetrics.tail import (
     value_at_risk,
 )
 from riskmetrics.volatility import realized_volatility
-
 
 returns_strategy = hyp_st.lists(
     hyp_st.floats(

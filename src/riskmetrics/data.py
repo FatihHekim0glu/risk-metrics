@@ -12,7 +12,6 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-
 _INSTALL_HINT = (
     "Install with `pip install riskmetrics[data]` to enable price fetching."
 )

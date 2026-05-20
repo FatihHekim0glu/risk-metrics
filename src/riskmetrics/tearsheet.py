@@ -200,7 +200,7 @@ def tearsheet(
             rows["tail.cvar_99"] = float(-arr[arr <= np.quantile(arr, 0.01)].mean())
             rows["tail.skew"] = s
             rows["tail.excess_kurtosis"] = k
-            jb_stat, jb_p = _sps.jarque_bera(arr)
+            _, jb_p = _sps.jarque_bera(arr)
             rows["tail.jarque_bera_pvalue"] = float(jb_p)
             sr = float(
                 sharpe_ratio(
