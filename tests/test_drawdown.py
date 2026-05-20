@@ -14,15 +14,12 @@ from riskmetrics.drawdown import (
 
 
 def test_max_drawdown_tiny(tiny_returns: pd.Series) -> None:
-    # Wealth trajectory:
-    #   day0: 1.01
-    #   day1: 1.01 * 0.98 = 0.9898    <- valley
-    #   day2: 0.9898 * 1.015 = 1.00465
-    #   ...
-    # Running peak at day1 is 1.01; drawdown there = 0.9898/1.01 - 1 = -0.0198
+    # Wealth at day1: 1.01 * 0.98 = 0.9898; peak still 1.01.
+    # Drawdown = 0.9898/1.01 - 1 = 0.98 - 1 = -0.02 exactly
+    # (0.9898/1.01 reduces to exactly 0.98 because 0.9898 = 0.98 * 1.01).
     dd = drawdown_series(tiny_returns)
-    assert dd.min() == pytest.approx(-0.0198, abs=1e-4)
-    assert max_drawdown(tiny_returns) == pytest.approx(-0.0198, abs=1e-4)
+    assert dd.min() == pytest.approx(-0.02, abs=1e-12)
+    assert max_drawdown(tiny_returns) == pytest.approx(-0.02, abs=1e-12)
 
 
 def test_drawdown_table_synthetic(synthetic_drawdown_returns: pd.Series) -> None:

@@ -19,7 +19,7 @@ from riskmetrics.tail import (
 def test_var_historical_uses_lower_method(tiny_returns: pd.Series) -> None:
     # Historical VaR at 80% on a 5-obs sample should pick one of the realized
     # returns under the "lower" interpolation convention (no interpolation).
-    val = value_at_risk(tiny_returns, level=0.80, method="historical")
+    val = value_at_risk(tiny_returns, confidence=0.80, method="historical")
     observed = set(tiny_returns.tolist())
     assert any(abs(val - o) < 1e-12 for o in observed)
 
@@ -28,7 +28,7 @@ def test_var_negative_sign() -> None:
     rng = np.random.default_rng(5)
     n = 1500
     series = pd.Series(rng.normal(0.0005, 0.012, n))
-    v = value_at_risk(series, level=0.95, method="historical")
+    v = value_at_risk(series, confidence=0.95, method="historical")
     assert v < 0.0
 
 
@@ -45,7 +45,7 @@ def test_cornish_fisher_warns_outside_domain() -> None:
     # but the construction reliably yields skew < -1.)
     with warnings.catch_warnings(record=True) as w:
         warnings.simplefilter("always")
-        _ = cornish_fisher_var(series, level=0.99)
+        _ = cornish_fisher_var(series, confidence=0.99)
         assert any(issubclass(rec.category, UserWarning) for rec in w)
 
 
@@ -53,8 +53,8 @@ def test_cvar_le_var() -> None:
     rng = np.random.default_rng(8)
     n = 600
     series = pd.Series(rng.normal(0.0, 0.01, n))
-    v = value_at_risk(series, level=0.95, method="historical")
-    cv = conditional_value_at_risk(series, level=0.95, method="historical")
+    v = value_at_risk(series, confidence=0.95, method="historical")
+    cv = conditional_value_at_risk(series, confidence=0.95, method="historical")
     # CVaR is the average loss in the tail beyond VaR, so it's at most VaR
     # (i.e., more negative or equal).
     assert cv <= v + 1e-12
@@ -63,7 +63,7 @@ def test_cvar_le_var() -> None:
 def test_psr_in_unit_interval() -> None:
     rng = np.random.default_rng(13)
     series = pd.Series(rng.normal(0.0005, 0.01, 1000))
-    p = probabilistic_sharpe_ratio(series, sr_benchmark=0.0)
+    p = probabilistic_sharpe_ratio(series, threshold_sr=0.0)
     assert 0.0 <= p <= 1.0
 
 

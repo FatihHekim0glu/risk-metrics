@@ -32,10 +32,10 @@ def test_simple_returns_handcalc() -> None:
 
 
 def test_total_return_tiny(tiny_returns: pd.Series) -> None:
+    # (1.01)(0.98)(1.015)(1.005)(0.99) - 1 = -0.0004264673500003
     expected = (1.01) * (0.98) * (1.015) * (1.005) * (0.99) - 1.0
-    assert total_return(tiny_returns) == pytest.approx(expected, abs=1e-7)
-    # The spec calls out ~0.0001435; double-check that constant too.
-    assert total_return(tiny_returns) == pytest.approx(0.0001435, abs=1e-6)
+    assert total_return(tiny_returns) == pytest.approx(expected, abs=1e-12)
+    assert total_return(tiny_returns) == pytest.approx(-0.00042646735, abs=1e-10)
 
 
 def test_cagr_one_year() -> None:

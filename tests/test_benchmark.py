@@ -92,11 +92,18 @@ def test_up_capture_compounds_not_averages() -> None:
     a_up = asset[up_mask]
     b_up = bench[up_mask]
 
-    compounded = ((1.0 + a_up).prod() - 1.0) / ((1.0 + b_up).prod() - 1.0)
+    # Library returns ratio of per-period geometric means (annualization
+    # factor = periods_per_year / k). With periods_per_year=1 this collapses
+    # to (prod^(1/k) - 1) for each leg -- still compound, never arithmetic.
+    k = int(up_mask.sum())
+    geo_asset = (1.0 + a_up).prod() ** (1.0 / k) - 1.0
+    geo_bench = (1.0 + b_up).prod() ** (1.0 / k) - 1.0
+    compound_geo = geo_asset / geo_bench
     averaged = a_up.mean() / b_up.mean()
     # Sanity: our construction yields two clearly distinct candidates.
-    assert not np.isclose(compounded, averaged, atol=1e-6)
+    assert not np.isclose(compound_geo, averaged, atol=1e-6)
 
-    got = up_capture(asset, bench)
-    # The function must match the compounding convention.
-    assert got == pytest.approx(compounded, rel=1e-6, abs=1e-9)
+    got = up_capture(asset, bench, periods_per_year=1)
+    assert got == pytest.approx(compound_geo, rel=1e-6, abs=1e-9)
+    # And confirm the function is NOT using arithmetic mean.
+    assert not np.isclose(got, averaged, atol=1e-3)

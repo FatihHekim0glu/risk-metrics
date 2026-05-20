@@ -61,8 +61,8 @@ def test_property_sharpe_scale_invariant_under_positive_scaling(r: pd.Series) ->
 @_SETTINGS
 @given(r=returns_strategy)
 def test_property_var_monotonic_in_confidence(r: pd.Series) -> None:
-    v95 = float(value_at_risk(r, level=0.95, method="historical"))
-    v99 = float(value_at_risk(r, level=0.99, method="historical"))
+    v95 = float(value_at_risk(r, confidence=0.95, method="historical"))
+    v99 = float(value_at_risk(r, confidence=0.99, method="historical"))
     # 99% confidence VaR is at least as severe (i.e., <=) as 95% VaR.
     assert v99 <= v95 + 1e-12
 
@@ -70,8 +70,8 @@ def test_property_var_monotonic_in_confidence(r: pd.Series) -> None:
 @_SETTINGS
 @given(r=returns_strategy)
 def test_property_cvar_le_var(r: pd.Series) -> None:
-    v = float(value_at_risk(r, level=0.95, method="historical"))
-    cv = float(conditional_value_at_risk(r, level=0.95, method="historical"))
+    v = float(value_at_risk(r, confidence=0.95, method="historical"))
+    cv = float(conditional_value_at_risk(r, confidence=0.95, method="historical"))
     assert cv <= v + 1e-12
 
 
@@ -96,7 +96,7 @@ def test_property_cumulative_return_floor(r: pd.Series) -> None:
 @_SETTINGS
 @given(r=returns_strategy)
 def test_property_psr_in_unit_interval(r: pd.Series) -> None:
-    p = probabilistic_sharpe_ratio(r, sr_benchmark=0.0)
+    p = probabilistic_sharpe_ratio(r, threshold_sr=0.0)
     val = float(p)
     if math.isnan(val):
         return

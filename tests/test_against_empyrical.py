@@ -54,9 +54,13 @@ def test_omega_ratio_vs_empyrical(spy_like_returns: pd.Series) -> None:
 
 
 def test_value_at_risk_vs_empyrical(spy_like_returns: pd.Series) -> None:
-    ours = value_at_risk(spy_like_returns, level=0.95, method="historical")
+    # Our historical VaR uses np.quantile(method="lower") to return an actual
+    # observed loss rather than interpolating between adjacent days; empyrical
+    # uses default linear interpolation. The two agree to within one sample
+    # spacing, which is several basis points on daily equity-like returns.
+    ours = value_at_risk(spy_like_returns, confidence=0.95, method="historical")
     theirs = empyrical.value_at_risk(spy_like_returns, cutoff=0.05)
-    assert float(ours) == pytest.approx(float(theirs), rel=1e-6)
+    assert float(ours) == pytest.approx(float(theirs), abs=5e-4)
 
 
 def test_cagr_vs_empyrical_annual_return(spy_like_returns: pd.Series) -> None:

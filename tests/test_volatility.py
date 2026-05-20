@@ -15,13 +15,15 @@ from riskmetrics.volatility import (
 
 
 def test_realized_vol_handcalc(tiny_returns: pd.Series) -> None:
-    # std with ddof=1 of [0.01, -0.02, 0.015, 0.005, -0.01]
+    # Hand calc on [0.01, -0.02, 0.015, 0.005, -0.01]:
+    #   mean = 0; squared deviations sum to 0.00085; ddof=1 variance = 0.00085/4
+    #   std = sqrt(0.0002125) = 0.01457737973711...
     sample_std = tiny_returns.std(ddof=1)
-    assert sample_std == pytest.approx(0.013509256, abs=1e-6)
+    assert sample_std == pytest.approx(0.014577379737, abs=1e-9)
     annualized = sample_std * math.sqrt(252)
     out = realized_volatility(tiny_returns, periods_per_year=252)
     assert out == pytest.approx(annualized, abs=1e-9)
-    assert out == pytest.approx(0.21443, abs=1e-4)
+    assert out == pytest.approx(0.23141, abs=1e-4)
 
 
 def test_downside_deviation_divides_by_N(tiny_returns: pd.Series) -> None:

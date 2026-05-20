@@ -11,10 +11,9 @@ from riskmetrics.ratios import omega_ratio, sharpe_ratio, sortino_ratio
 
 
 def test_sharpe_tiny(tiny_returns: pd.Series) -> None:
-    # mean = 0.001, sample std (ddof=1) ~ 0.013509
-    # un-annualized Sharpe (periods_per_year=1) = 0.001 / 0.013509 ~ 0.07403
+    # mean of [0.01, -0.02, 0.015, 0.005, -0.01] is exactly 0; Sharpe = 0/vol = 0.
     val = sharpe_ratio(tiny_returns, risk_free=0.0, periods_per_year=1)
-    assert val == pytest.approx(0.07403, abs=1e-4)
+    assert val == pytest.approx(0.0, abs=1e-12)
 
 
 def test_sharpe_annualization_factor() -> None:
@@ -31,11 +30,10 @@ def test_sharpe_annualization_factor() -> None:
 
 
 def test_sortino_divides_by_total_N(tiny_returns: pd.Series) -> None:
-    # mean excess = 0.001 (rf=0); with N divisor for downside dev (MAR=0),
-    # downside per-period = 0.01 (see test_volatility); annualization factor 1.
-    # Therefore sortino (periods_per_year=1, mar=0) = 0.001 / 0.01 = 0.1
+    # mean of tiny is exactly 0, so Sortino = 0/downside_dev = 0.
+    # The N-divisor property is exercised separately in test_volatility.
     val = sortino_ratio(tiny_returns, mar=0.0, periods_per_year=1)
-    assert val == pytest.approx(0.1, abs=1e-9)
+    assert val == pytest.approx(0.0, abs=1e-12)
 
 
 def test_sharpe_smart_lower_than_naive_under_positive_autocorrelation() -> None:
@@ -56,10 +54,8 @@ def test_sharpe_smart_lower_than_naive_under_positive_autocorrelation() -> None:
 
 def test_sharpe_zero_vol_returns_nan_with_warning() -> None:
     series = pd.Series([0.001] * 100)
-    with warnings.catch_warnings(record=True) as w:
-        warnings.simplefilter("always")
+    with pytest.warns(UserWarning, match="zero volatility"):
         val = sharpe_ratio(series, risk_free=0.0, periods_per_year=252)
-        assert any(issubclass(rec.category, UserWarning) for rec in w)
     assert np.isnan(val)
 
 
