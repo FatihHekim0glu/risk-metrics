@@ -13,7 +13,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- A no-AI-attribution CI guard that fails any pull request carrying a Claude/Anthropic co-author or "Generated with" trailer.
 - Coverage configuration with a `fail_under = 85` gate and omits for the network data layer and the Streamlit app.
 
 ### Changed

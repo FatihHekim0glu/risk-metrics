@@ -88,7 +88,7 @@ test file is named `test_<module>_properties.py`.
 - Subject line ≤ 72 characters.
 - Body wrapped at 72 columns, explaining *why* if it is not obvious from the
   diff.
-- **No co-authors and no AI attribution.** The author is the
+- **No co-author or generated-with trailers.** The author is the
   person who wrote the code.
 
 ## Pull request review checklist
