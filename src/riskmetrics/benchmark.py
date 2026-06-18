@@ -77,9 +77,7 @@ def _to_per_period_rf(
     if isinstance(risk_free, pd.Series):
         aligned = risk_free.reindex(index).ffill()
         if aligned.dropna().empty:
-            raise ValueError(
-                "risk_free Series has no overlapping observations with returns"
-            )
+            raise ValueError("risk_free Series has no overlapping observations with returns")
         per_period = (1.0 + aligned) ** (1.0 / periods_per_year) - 1.0
         return per_period.ffill().bfill()
 
@@ -356,9 +354,7 @@ def information_ratio(
             stacklevel=2,
         )
         return float("nan")
-    return float(active.mean() * periods_per_year) / (
-        te * float(np.sqrt(periods_per_year))
-    )
+    return float(active.mean() * periods_per_year) / (te * float(np.sqrt(periods_per_year)))
 
 
 def _capture(

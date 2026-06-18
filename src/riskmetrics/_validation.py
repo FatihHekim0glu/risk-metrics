@@ -64,6 +64,4 @@ def validate_min_obs(s: pd.Series, min_obs: int, metric: str = "metric") -> None
     to ``"metric"`` so callers that do not need a custom label can omit it.
     """
     if len(s) < min_obs:
-        raise ValueError(
-            f"{metric} requires at least {min_obs} observations, got {len(s)}"
-        )
+        raise ValueError(f"{metric} requires at least {min_obs} observations, got {len(s)}")

@@ -140,9 +140,9 @@ def cornish_fisher_var(
 
     z_cf = (
         z
-        + (z ** 2 - 1.0) * s_skew / 6.0
-        + (z ** 3 - 3.0 * z) * k_excess / 24.0
-        - (2.0 * z ** 3 - 5.0 * z) * s_skew ** 2 / 36.0
+        + (z**2 - 1.0) * s_skew / 6.0
+        + (z**3 - 3.0 * z) * k_excess / 24.0
+        - (2.0 * z**3 - 5.0 * z) * s_skew**2 / 36.0
     )
     return float(r.mean() + r.std(ddof=1) * z_cf)
 
@@ -194,12 +194,9 @@ def conditional_value_at_risk(
         return float(tail.mean())
     if method in ("parametric", "gaussian"):
         z = stats.norm.ppf(1.0 - confidence)
-        return float(
-            r.mean() - r.std(ddof=1) * stats.norm.pdf(z) / (1.0 - confidence)
-        )
+        return float(r.mean() - r.std(ddof=1) * stats.norm.pdf(z) / (1.0 - confidence))
     raise ValueError(
-        f"Unknown method {method!r}; expected one of "
-        "'historical', 'parametric', 'gaussian'"
+        f"Unknown method {method!r}; expected one of 'historical', 'parametric', 'gaussian'"
     )
 
 
@@ -402,7 +399,7 @@ def probabilistic_sharpe_ratio(
     if not (np.isfinite(s_skew) and np.isfinite(k_full)):
         return float("nan")
 
-    denom_sq = 1.0 - s_skew * sr_obs + (k_full - 1.0) / 4.0 * sr_obs ** 2
+    denom_sq = 1.0 - s_skew * sr_obs + (k_full - 1.0) / 4.0 * sr_obs**2
     if denom_sq <= 0.0 or not np.isfinite(denom_sq):
         return float("nan")
     denom = float(np.sqrt(denom_sq))

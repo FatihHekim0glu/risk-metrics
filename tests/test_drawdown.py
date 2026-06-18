@@ -79,9 +79,7 @@ def test_ulcer_index_positive() -> None:
     assert ulcer_index(noisy) >= 0.0
 
     # Constant non-negative returns -> wealth is non-decreasing -> no drawdown.
-    flat = pd.Series(
-        [0.001] * 200, index=pd.date_range("2020-01-01", periods=200, freq="B")
-    )
+    flat = pd.Series([0.001] * 200, index=pd.date_range("2020-01-01", periods=200, freq="B"))
     assert ulcer_index(flat) == pytest.approx(0.0, abs=1e-12)
 
 

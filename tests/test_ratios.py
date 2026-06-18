@@ -43,9 +43,7 @@ def test_sharpe_smart_lower_than_naive_under_positive_autocorrelation() -> None:
     x = np.zeros(n)
     for i in range(1, n):
         x[i] = rho * x[i - 1] + eps[i]
-    series = pd.Series(
-        x, index=pd.date_range("2010-01-01", periods=n, freq="B")
-    )
+    series = pd.Series(x, index=pd.date_range("2010-01-01", periods=n, freq="B"))
     naive = sharpe_ratio(series, risk_free=0.0, periods_per_year=252, smart=False)
     smart = sharpe_ratio(series, risk_free=0.0, periods_per_year=252, smart=True)
     assert smart < naive

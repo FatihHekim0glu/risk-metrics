@@ -9,6 +9,7 @@ Where conventions match, the numbers should be close; where they don't,
 
 The whole module is skipped if ``empyrical`` is not installed.
 """
+
 from __future__ import annotations
 
 import numpy as np

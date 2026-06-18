@@ -8,7 +8,7 @@ breaking-release bump and a corresponding entry in `CHANGELOG.md`.
 
 The Sortino downside deviation is computed as
 `sqrt(sum(min(r - target, 0)^2) / N)`, where `N` is the total number of
-observations — not the count of observations below the target. This follows
+observations, not the count of observations below the target. This follows
 the original Sortino & Price (1994) convention and matches the implementations
 in `empyrical`, `quantstats`, `pyfolio`, and `vectorbt`. Dividing by
 `N_downside` produces a higher and more flattering ratio but is inconsistent
@@ -53,7 +53,7 @@ order statistic, and the difference is documented in the function docstring.
 ## 6. Excess kurtosis (Fisher) is the default
 
 Where we report kurtosis (e.g. as an input to `cornish_fisher_var` and in the
-tearsheet), we use the Fisher definition — normal distribution gives 0 —
+tearsheet), we use the Fisher definition, where a normal distribution gives 0,
 rather than the Pearson definition where normal gives 3. Excess kurtosis is
 easier to read at a glance and is the convention in `scipy.stats.kurtosis`
 and in most finance textbooks since Tsay.
@@ -64,7 +64,7 @@ and in most finance textbooks since Tsay.
 (which has been abandoned since Quantopian shut down). It is the most cited
 Python reference for these metrics and is what people compare against, so it
 is the natural target for our Layer 3 parity tests. Where we deliberately
-diverge from it — e.g. `drawdown_table` not closing open drawdowns — the
+diverge from it (e.g. `drawdown_table` not closing open drawdowns), the
 parity test is replaced with a divergence test that pins the difference.
 
 ## 8. `ffn` is excluded from parity tests
@@ -79,7 +79,7 @@ divergence in the docstring rather than copy the bug.
 
 The most common bug in financial-metrics code is operating on two series
 whose indices look the same but are not, leading to silent NaN propagation
-or — worse — a metric computed on misaligned data. Every pairwise function
+or, worse, a metric computed on misaligned data. Every pairwise function
 in this library begins with `r, b = align_inner(r, b)` so the caller does
 not have to think about it. The cost is one extra inner-join per call,
 which is negligible compared to the time spent acquiring the data.
