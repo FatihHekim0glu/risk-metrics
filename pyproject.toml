@@ -121,3 +121,26 @@ ignore_missing_imports = true
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-ra --strict-markers"
+markers = [
+    "integration: hits live data or the network; skip by default",
+    "slow: long-running",
+]
+
+[tool.coverage.run]
+source = ["riskmetrics"]
+branch = true
+omit = [
+    # Network/IO data layer: exercised only against live yfinance/FRED/Stooq
+    # endpoints, which CI cannot reach reliably. Covered by integration runs.
+    "src/riskmetrics/data.py",
+    # Streamlit dashboard entry point: UI glue, not core numerical logic.
+    "app/*",
+]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "if TYPE_CHECKING:",
+    "raise NotImplementedError",
+]
+fail_under = 85
