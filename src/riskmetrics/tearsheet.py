@@ -119,12 +119,8 @@ def tearsheet(
     rows["drawdown.duration_max_days"] = _safe(max_drawdown_duration, returns)
     rows["drawdown.ulcer_index"] = _safe(ulcer_index, returns)
     rows["drawdown.pain_index"] = _safe(pain_index, returns)
-    rows["drawdown.calmar"] = _safe(
-        calmar_ratio, returns, periods_per_year=periods_per_year
-    )
-    rows["drawdown.sterling"] = _safe(
-        sterling_ratio, returns, periods_per_year=periods_per_year
-    )
+    rows["drawdown.calmar"] = _safe(calmar_ratio, returns, periods_per_year=periods_per_year)
+    rows["drawdown.sterling"] = _safe(sterling_ratio, returns, periods_per_year=periods_per_year)
 
     # ---- ratios.* --------------------------------------------------------------
     rows["ratios.sharpe"] = _safe(
@@ -192,9 +188,7 @@ def tearsheet(
             s = float(_sps.skew(arr, bias=False))
             k = float(_sps.kurtosis(arr, fisher=True, bias=False))
             z = _sps.norm.ppf(0.05)
-            z_cf = z + (z**2 - 1) * s / 6 + (z**3 - 3 * z) * k / 24 - (
-                2 * z**3 - 5 * z
-            ) * s**2 / 36
+            z_cf = z + (z**2 - 1) * s / 6 + (z**3 - 3 * z) * k / 24 - (2 * z**3 - 5 * z) * s**2 / 36
             rows["tail.var_95_cornish_fisher"] = float(-(mu + sigma * z_cf))
             rows["tail.cvar_95"] = float(-arr[arr <= np.quantile(arr, 0.05)].mean())
             rows["tail.cvar_99"] = float(-arr[arr <= np.quantile(arr, 0.01)].mean())
@@ -275,14 +269,10 @@ def tearsheet(
             rows["benchmark.down_capture"] = _safe(
                 _bench.down_capture, returns, benchmark, periods_per_year=periods_per_year
             )
-            rows["benchmark.correlation"] = _safe(
-                _bench.correlation, returns, benchmark
-            )
+            rows["benchmark.correlation"] = _safe(_bench.correlation, returns, benchmark)
             # ``ratios.m_squared`` depends on benchmark vol, so it lives down here.
             try:
-                bench_vol = float(
-                    realized_volatility(benchmark, periods_per_year=periods_per_year)
-                )
+                bench_vol = float(realized_volatility(benchmark, periods_per_year=periods_per_year))
                 from riskmetrics.ratios import m_squared
 
                 rows["ratios.m_squared"] = _safe(
@@ -305,9 +295,7 @@ def tearsheet(
                 var_b = float(np.var(b_al, ddof=1))
                 beta = cov / var_b if var_b > 0 else float("nan")
                 corr = float(np.corrcoef(r_al, b_al)[0, 1])
-                te = float(
-                    (r_al - b_al).std(ddof=1) * np.sqrt(periods_per_year)
-                )
+                te = float((r_al - b_al).std(ddof=1) * np.sqrt(periods_per_year))
                 ir_num = float((r_al - b_al).mean() * periods_per_year)
                 ir = ir_num / te if te > 0 else float("nan")
                 up_mask = b_al > 0
@@ -331,9 +319,7 @@ def tearsheet(
                 rows["benchmark.up_capture"] = up_cap
                 rows["benchmark.down_capture"] = dn_cap
                 rows["benchmark.correlation"] = corr
-                bench_vol = float(
-                    realized_volatility(benchmark, periods_per_year=periods_per_year)
-                )
+                bench_vol = float(realized_volatility(benchmark, periods_per_year=periods_per_year))
                 from riskmetrics.ratios import m_squared
 
                 rows["ratios.m_squared"] = _safe(

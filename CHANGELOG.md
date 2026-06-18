@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- `drawdown_table`, `sterling_ratio`, and `max_drawdown_duration` no longer raise `AttributeError` on a return series with a plain integer index. Duration now falls back to a bar count when the index is not a `DatetimeIndex`, so the documented `sterling_ratio` example runs.
+
+### Added
+
+- Coverage configuration with a `fail_under = 85` gate and omits for the network data layer and the Streamlit app.
+
+### Changed
+
+- Expanded the test suite to cover validation, error, and edge paths across every module, raising line coverage of the core metrics to roughly 90%.
+
 ## [0.1.0] - 2026-05-20
 
 ### Added

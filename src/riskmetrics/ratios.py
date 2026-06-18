@@ -29,9 +29,7 @@ def _to_per_period_rf(
         aligned = risk_free.reindex(returns.index).ffill()
         aligned = aligned.dropna()
         if aligned.empty:
-            raise ValueError(
-                "risk_free Series has no overlapping observations with returns"
-            )
+            raise ValueError("risk_free Series has no overlapping observations with returns")
         # Re-align returns to the surviving rf index after dropping leading NaNs.
         per_period = (1.0 + aligned) ** (1.0 / periods_per_year) - 1.0
         return per_period.reindex(returns.index).ffill().bfill()
@@ -173,9 +171,7 @@ def sortino_ratio(
     dd = float(np.sqrt((shortfall**2).sum() / len(r)) * np.sqrt(periods_per_year))
 
     if dd == 0.0 or not np.isfinite(dd):
-        warnings.warn(
-            "zero downside deviation; Sortino undefined", UserWarning, stacklevel=2
-        )
+        warnings.warn("zero downside deviation; Sortino undefined", UserWarning, stacklevel=2)
         return float("nan")
 
     numerator = float(excess.mean() * periods_per_year)
@@ -250,9 +246,7 @@ def treynor_ratio(
     validate_min_obs(r, min_obs=1, metric="treynor_ratio")
 
     if beta is None or not np.isfinite(beta) or beta == 0.0:
-        warnings.warn(
-            "beta is zero or NaN; Treynor undefined", UserWarning, stacklevel=2
-        )
+        warnings.warn("beta is zero or NaN; Treynor undefined", UserWarning, stacklevel=2)
         return float("nan")
 
     rf_pp = _to_per_period_rf(risk_free, r, periods_per_year)

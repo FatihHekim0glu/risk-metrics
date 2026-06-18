@@ -48,10 +48,10 @@ def synthetic_drawdown_returns() -> pd.Series:
     The exact recovery date is asserted approximately in the test.
     """
     daily = (
-        [0.01] * 10        # days 0..9   (peak builds)
-        + [-0.03] * 10     # days 10..19 (valley)
-        + [0.01] * 20      # days 20..39 (recovery + new highs)
-        + [0.0] * 30       # days 40..69 (flat)
+        [0.01] * 10  # days 0..9   (peak builds)
+        + [-0.03] * 10  # days 10..19 (valley)
+        + [0.01] * 20  # days 20..39 (recovery + new highs)
+        + [0.0] * 30  # days 40..69 (flat)
     )
     idx = pd.date_range("2024-01-02", periods=len(daily), freq="B")
     return pd.Series(daily, index=idx, name="synthetic_dd")

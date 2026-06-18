@@ -12,9 +12,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-_INSTALL_HINT = (
-    "Install with `pip install riskmetrics[data]` to enable price fetching."
-)
+_INSTALL_HINT = "Install with `pip install riskmetrics[data]` to enable price fetching."
 
 # Trading days per year used to convert annualized rates to per-day rates.
 _PERIODS_PER_YEAR = 252
@@ -45,9 +43,7 @@ def _require_pyarrow() -> None:
     try:
         import pyarrow  # noqa: F401
     except ImportError as exc:  # pragma: no cover - import guard
-        raise ImportError(
-            "pyarrow is required for parquet caching. " + _INSTALL_HINT
-        ) from exc
+        raise ImportError("pyarrow is required for parquet caching. " + _INSTALL_HINT) from exc
 
 
 def _to_stooq_symbol(ticker: str) -> str:
@@ -173,18 +169,13 @@ def _fetch_fred_csv(series: str, start: str, end: str | None) -> pd.DataFrame:
     """
     from io import StringIO
 
-    url = (
-        "https://fred.stlouisfed.org/graph/fredgraph.csv?"
-        f"id={series}&cosd={start}"
-    )
+    url = f"https://fred.stlouisfed.org/graph/fredgraph.csv?id={series}&cosd={start}"
     if end is not None:
         url += f"&coed={end}"
     body = _http_get_csv(url)
     df = pd.read_csv(StringIO(body))
     # FRED CSV column has been renamed across years; accept either form.
-    date_col = (
-        "observation_date" if "observation_date" in df.columns else "DATE"
-    )
+    date_col = "observation_date" if "observation_date" in df.columns else "DATE"
     df[date_col] = pd.to_datetime(df[date_col])
     df = df.set_index(date_col)
     df.index.name = "DATE"
@@ -265,9 +256,7 @@ def get_prices(
         >>> px.tail()
     """
     if source not in {"yfinance", "stooq"}:
-        raise ValueError(
-            f"Unknown source {source!r}; expected 'yfinance' or 'stooq'."
-        )
+        raise ValueError(f"Unknown source {source!r}; expected 'yfinance' or 'stooq'.")
 
     ticker_list = _normalize_tickers(tickers)
     _require_pyarrow()
@@ -287,9 +276,7 @@ def get_prices(
                 fetched_frames[ticker] = cached
                 continue
             # Incremental fetch from day after cache's last date.
-            fetch_starts[ticker] = (
-                cached.index.max() + pd.Timedelta(days=1)
-            ).strftime("%Y-%m-%d")
+            fetch_starts[ticker] = (cached.index.max() + pd.Timedelta(days=1)).strftime("%Y-%m-%d")
             fetched_frames[ticker] = cached
         else:
             fetch_starts[ticker] = start
@@ -305,9 +292,7 @@ def get_prices(
             new_data = pd.DataFrame()
             if source == "yfinance":
                 try:
-                    new_data = _fetch_yfinance(
-                        group_tickers, group_start, end, auto_adjust
-                    )
+                    new_data = _fetch_yfinance(group_tickers, group_start, end, auto_adjust)
                 except Exception as exc:
                     # Catch yfinance.exceptions.YFRateLimitError without importing it.
                     if exc.__class__.__name__ == "YFRateLimitError":
@@ -340,9 +325,7 @@ def get_prices(
                 combined = combined.sort_index()
                 combined = combined[~combined.index.duplicated(keep="last")]
                 fetched_frames[ticker] = combined
-                _write_cached_ticker(
-                    cache_path / f"{ticker}.parquet", combined, ticker
-                )
+                _write_cached_ticker(cache_path / f"{ticker}.parquet", combined, ticker)
 
     if not fetched_frames:
         return pd.DataFrame()
@@ -487,9 +470,7 @@ def compute_returns(
         return prices.pct_change().dropna()
     if method == "log":
         return np.log(prices / prices.shift(1)).dropna()
-    raise ValueError(
-        f"Unknown method {method!r}; expected 'simple' or 'log'."
-    )
+    raise ValueError(f"Unknown method {method!r}; expected 'simple' or 'log'.")
 
 
 def align_to_calendar(

@@ -79,6 +79,9 @@ ignore = ["RUF022", "RUF002", "RUF003"]
 # Test names embed capital math/API tokens (N divisor, RollingOLS, etc.) and the
 # empyrical-parity file uses importorskip + lazy imports by design.
 "tests/*.py" = ["N802", "E402", "E501"]
+# The Streamlit app imports lazily after page setup by design and keeps a few
+# dataframe literals on one line for readability.
+"app/*.py" = ["E402", "E501"]
 
 [tool.mypy]
 strict = false
@@ -121,3 +124,26 @@ ignore_missing_imports = true
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-ra --strict-markers"
+markers = [
+    "integration: hits live data or the network; skip by default",
+    "slow: long-running",
+]
+
+[tool.coverage.run]
+source = ["riskmetrics"]
+branch = true
+omit = [
+    # Network/IO data layer: exercised only against live yfinance/FRED/Stooq
+    # endpoints, which CI cannot reach reliably. Covered by integration runs.
+    "src/riskmetrics/data.py",
+    # Streamlit dashboard entry point: UI glue, not core numerical logic.
+    "app/*",
+]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "if TYPE_CHECKING:",
+    "raise NotImplementedError",
+]
+fail_under = 85

@@ -21,9 +21,7 @@ from riskmetrics.tail import (
 from riskmetrics.volatility import realized_volatility
 
 returns_strategy = hyp_st.lists(
-    hyp_st.floats(
-        min_value=-0.5, max_value=0.5, allow_nan=False, allow_infinity=False, width=64
-    ),
+    hyp_st.floats(min_value=-0.5, max_value=0.5, allow_nan=False, allow_infinity=False, width=64),
     min_size=30,
     max_size=2000,
 ).map(lambda xs: pd.Series(xs))

@@ -113,6 +113,11 @@ def drawdown_table(returns: ReturnsLike, top: int = 10) -> pd.DataFrame:
     n = len(dd)
     dd_values = dd.to_numpy()
     index = dd.index
+    # ``duration_days`` is a calendar-day span only when the index carries
+    # dates. For a plain integer/positional index (as in the documented
+    # ``sterling_ratio`` example) there are no calendar days, so the duration
+    # is the number of bars between the peak and the recovery (or last) bar.
+    is_datetime_index = isinstance(index, pd.DatetimeIndex)
 
     underwater = dd_values < 0
     episodes: list[dict] = []
@@ -139,16 +144,22 @@ def drawdown_table(returns: ReturnsLike, top: int = 10) -> pd.DataFrame:
         # index value (peak == wealth on bar 0 by construction unless r[0] < 0,
         # in which case the implicit peak is pre-sample and we still anchor at
         # index[0]).
-        peak_date = index[0] if start == 0 else index[start - 1]
+        peak_pos = 0 if start == 0 else start - 1
+        peak_date = index[peak_pos]
 
         if j < n:
             recovery_date = index[j]
             is_open = False
-            duration_days = int((recovery_date - peak_date).days)
+            end_pos = j
         else:
             recovery_date = pd.NaT
             is_open = True
-            duration_days = int((index[-1] - peak_date).days)
+            end_pos = n - 1
+
+        if is_datetime_index:
+            duration_days = int((index[end_pos] - peak_date).days)
+        else:
+            duration_days = int(end_pos - peak_pos)
 
         episodes.append(
             {
@@ -213,7 +224,7 @@ def ulcer_index(returns: ReturnsLike) -> float:
         0.1479
     """
     dd = drawdown_series(returns)
-    return float(np.sqrt((dd ** 2).mean()))
+    return float(np.sqrt((dd**2).mean()))
 
 
 def pain_index(returns: ReturnsLike) -> float:
