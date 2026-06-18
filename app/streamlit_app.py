@@ -196,11 +196,11 @@ def _g(s: pd.Series | None, key: str) -> float:
 
 
 def _fmt_pct(x: float, digits: int = 2) -> str:
-    return "—" if not np.isfinite(x) else f"{x * 100:.{digits}f}%"
+    return "n/a" if not np.isfinite(x) else f"{x * 100:.{digits}f}%"
 
 
 def _fmt_num(x: float, digits: int = 2) -> str:
-    return "—" if not np.isfinite(x) else f"{x:.{digits}f}"
+    return "n/a" if not np.isfinite(x) else f"{x:.{digits}f}"
 
 
 # ---- Hero strip ------------------------------------------------------------
@@ -219,11 +219,7 @@ for col, (label, key, fmt, higher_is_better) in zip(hero, hero_metrics, strict=T
         diff = p - b
         delta_str = fmt(diff)
         # For drawdown and vol/VaR, "higher" is worse.
-        delta_color = (
-            "normal"
-            if higher_is_better
-            else ("inverse" if label in {"Max drawdown"} else "inverse")
-        )
+        delta_color = "normal" if higher_is_better else "inverse"
         col.metric(label, fmt(p), delta=delta_str, delta_color=delta_color)
     else:
         col.metric(label, fmt(p))
@@ -231,7 +227,7 @@ for col, (label, key, fmt, higher_is_better) in zip(hero, hero_metrics, strict=T
 
 # ---- Auto-diagnostics ------------------------------------------------------
 warnings_list: list[str] = []
-n_obs = int(len(portfolio_returns))
+n_obs = len(portfolio_returns)
 arr = portfolio_returns.to_numpy()
 
 # Auto-diagnostics fire ONLY when actionable: the test surfaces a number the
@@ -292,7 +288,7 @@ except Exception:
 if n_obs < 252:
     se = 1.0 / np.sqrt(n_obs) if n_obs > 0 else float("nan")
     warnings_list.append(
-        f"Sample size {n_obs} (< 252) — Sharpe standard error ≈ {se:.2f}; "
+        f"Sample size {n_obs} (< 252); Sharpe standard error is roughly {se:.2f}; "
         f"treat the headline figure as indicative."
     )
 
@@ -333,7 +329,7 @@ if not benchmark_returns.empty:
                 lo, hi = float(roll_beta.min()), float(roll_beta.max())
                 if hi - lo > 1.0:
                     warnings_list.append(
-                        f"Rolling 90-day beta ranges {lo:.2f}–{hi:.2f} "
+                        f"Rolling 90-day beta ranges {lo:.2f} to {hi:.2f} "
                         f"(> 1.0 swing); single-beta CAPM alpha is unreliable."
                     )
     except Exception:
@@ -365,9 +361,9 @@ except Exception:
 
 n_warn = len(warnings_list)
 expander_label = (
-    f"⚠ {n_warn} model warnings — expand"
+    f"{n_warn} model warnings (expand)"
     if n_warn > 0
-    else "0 model warnings — expand"
+    else "0 model warnings (expand)"
 )
 with st.expander(expander_label, expanded=(n_warn > 0)):
     if not warnings_list:
@@ -534,7 +530,7 @@ with tab_risk:
 
 # ---- Risk-adjusted tab -----------------------------------------------------
 with tab_radj:
-    st.subheader("Risk-adjusted ratios — portfolio vs benchmark")
+    st.subheader("Risk-adjusted ratios: portfolio vs benchmark")
     ratio_keys = [
         ("Sharpe", "ratios.sharpe"),
         ("Sortino", "ratios.sortino"),
@@ -551,7 +547,7 @@ with tab_radj:
                 bench_ticker if not benchmark_returns.empty else "Benchmark": (
                     _fmt_num(_g(ts_benchmark, key))
                     if ts_benchmark is not None
-                    else "—"
+                    else "n/a"
                 ),
             }
         )
@@ -593,8 +589,8 @@ with tab_tail:
             "Method": ["Historical", "Parametric (normal)", "Cornish-Fisher"],
             "VaR 95%": [_fmt_pct(_var_hist(0.95)), _fmt_pct(_var_param(0.95)), _fmt_pct(_var_cf(0.95))],
             "VaR 99%": [_fmt_pct(_var_hist(0.99)), _fmt_pct(_var_param(0.99)), _fmt_pct(_var_cf(0.99))],
-            "CVaR 95%": [_fmt_pct(_cvar_hist(0.95)), "—", "—"],
-            "CVaR 99%": [_fmt_pct(_cvar_hist(0.99)), "—", "—"],
+            "CVaR 95%": [_fmt_pct(_cvar_hist(0.95)), "n/a", "n/a"],
+            "CVaR 99%": [_fmt_pct(_cvar_hist(0.99)), "n/a", "n/a"],
         }
     )
     st.dataframe(var_df, use_container_width=True, hide_index=True)
@@ -654,7 +650,7 @@ with tab_tail:
 # ---- Benchmark tab ---------------------------------------------------------
 with tab_bench:
     if benchmark_returns.empty:
-        st.info("No benchmark data — benchmark analytics unavailable.")
+        st.info("No benchmark data; benchmark analytics unavailable.")
     else:
         st.subheader("Alpha / Beta / R² / TE / IR / Capture")
         cards = st.columns(4)
@@ -714,10 +710,10 @@ with tab_diag:
                     "Missing rows": int(col.isna().sum()),
                     "First date": str(col.dropna().index.min().date())
                     if not col.dropna().empty
-                    else "—",
+                    else "n/a",
                     "Last date": str(col.dropna().index.max().date())
                     if not col.dropna().empty
-                    else "—",
+                    else "n/a",
                 }
             )
         else:
@@ -725,9 +721,9 @@ with tab_diag:
                 {
                     "Ticker": t,
                     "Coverage %": "0.0%",
-                    "Missing rows": "—",
-                    "First date": "—",
-                    "Last date": "—",
+                    "Missing rows": "n/a",
+                    "First date": "n/a",
+                    "Last date": "n/a",
                 }
             )
     st.dataframe(pd.DataFrame(diag_rows), use_container_width=True, hide_index=True)
