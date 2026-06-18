@@ -30,12 +30,12 @@ print(drawdown_table(returns))
 
 ## What's included
 
-- **returns** — return aggregation, cumulative and rolling returns, annualisation helpers.
-- **volatility** — sample volatility, rolling volatility, downside deviation.
-- **drawdown** — drawdown series, max drawdown, and a peak-to-recovery `drawdown_table`.
-- **ratios** — Sharpe, Sortino, Calmar, information ratio.
-- **tail** — Value-at-Risk (historical and parametric) and conditional VaR.
-- **benchmark** — alpha, beta, tracking error, and active-return statistics.
+- **returns**: return aggregation, cumulative and rolling returns, annualisation helpers.
+- **volatility**: sample volatility, rolling volatility, downside deviation.
+- **drawdown**: drawdown series, max drawdown, and a peak-to-recovery `drawdown_table`.
+- **ratios**: Sharpe, Sortino, Calmar, information ratio.
+- **tail**: Value-at-Risk (historical and parametric) and conditional VaR.
+- **benchmark**: alpha, beta, tracking error, and active-return statistics.
 
 An optional `dashboard` extra adds a Streamlit interface for interactive exploration.
 

@@ -14,7 +14,7 @@ uv run pytest
 ```
 
 The full test suite should pass on a clean checkout. If it does not, open an
-issue before changing anything — that is a real bug and we want to know about it
+issue before changing anything. That is a real bug and we want to know about it
 before any new work lands on top of it.
 
 Useful one-off commands:
@@ -38,7 +38,7 @@ The recommended workflow keeps each metric small, well-tested, and visible.
 2. **Hand-calc test** (Layer 1). Write a test in `tests/` that computes the
    metric on a tiny fixed input by hand, asserts the expected value to a
    reasonable tolerance, and includes the arithmetic in a comment. This is the
-   non-negotiable layer — every metric needs one.
+   non-negotiable layer, and every metric needs one.
 3. **Empyrical parity test** (Layer 3) if the metric exists in
    `empyrical-reloaded` and we agree with its definition. Use `pytest.importorskip`
    so the test is skipped when the dependency is not installed.
@@ -52,7 +52,7 @@ The recommended workflow keeps each metric small, well-tested, and visible.
 - **Formatting and linting** are handled by `ruff`. Run `ruff format` before
   committing and `ruff check` should pass with no warnings.
 - **Type hints** are required on every public function. We run `mypy` in lax
-  mode (`--ignore-missing-imports`, no `--strict`) — annotate what you can and
+  mode (`--ignore-missing-imports`, no `--strict`). Annotate what you can and
   do not fight the type checker over pandas edge cases.
 - **Docstrings** use the Google style with `Args`, `Returns`, `Raises`, and an
   `Example` section. The example must be runnable as a doctest.
@@ -65,18 +65,18 @@ The recommended workflow keeps each metric small, well-tested, and visible.
 We organise tests into four layers and every metric should be covered by at
 least Layer 1.
 
-- **Layer 1 — Hand-calc.** Tiny fixed input, expected value computed by hand,
+- **Layer 1, Hand-calc.** Tiny fixed input, expected value computed by hand,
   arithmetic shown in a comment. Catches sign errors, off-by-one,
   annualisation mistakes.
-- **Layer 2 — Edge cases.** Empty input, single observation, all-zero returns,
+- **Layer 2, Edge cases.** Empty input, single observation, all-zero returns,
   all-negative returns, NaNs in the middle of the series, misaligned indices.
-- **Layer 3 — Empyrical parity.** Where a metric also exists in
+- **Layer 3, Empyrical parity.** Where a metric also exists in
   `empyrical-reloaded`, assert near-equality on a real basket of returns.
   Documented divergences (e.g. our `drawdown_table` not silently closing open
   drawdowns) are pinned with comments.
-- **Layer 4 — Property tests.** `hypothesis`-driven invariants: Sharpe is
-  scale-invariant after rescaling risk-free, max drawdown is monotone non-
-  positive, etc.
+- **Layer 4, Property tests.** `hypothesis`-driven invariants: Sharpe is
+  scale-invariant after rescaling risk-free, max drawdown is monotone
+  non-positive, etc.
 
 Tests live in `tests/` and follow the layout `test_<module>.py`. A property
 test file is named `test_<module>_properties.py`.
@@ -88,7 +88,7 @@ test file is named `test_<module>_properties.py`.
 - Subject line ≤ 72 characters.
 - Body wrapped at 72 columns, explaining *why* if it is not obvious from the
   diff.
-- **No co-authors, no AI attribution, no `🤖` emoji.** The author is the
+- **No co-authors and no AI attribution.** The author is the
   person who wrote the code.
 
 ## Pull request review checklist
