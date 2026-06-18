@@ -1,4 +1,5 @@
 """Volatility and dispersion metrics: realized vol, downside deviation, semi-deviation, MAD, rolling vol, autocorrelation."""
+
 from __future__ import annotations
 
 import numpy as np
@@ -104,7 +105,7 @@ def downside_deviation(
     r = ensure_series(returns)
     validate_min_obs(r, min_obs=2)
     shortfall = (r - mar).clip(upper=0.0)
-    dd = float(np.sqrt((shortfall ** 2).sum() / len(r)))
+    dd = float(np.sqrt((shortfall**2).sum() / len(r)))
     if annualize:
         dd *= float(np.sqrt(periods_per_year))
     return dd
